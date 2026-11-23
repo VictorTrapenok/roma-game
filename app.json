@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Pixel Jumper",
+    "slug": "roma-game",
+    "version": "0.1.0",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b0e12",
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "baseUrl": "/roma-game"
+    },
+    "assetBundlePatterns": ["**/*"]
+  }
+}
