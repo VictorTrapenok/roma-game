@@ -6,7 +6,7 @@
  * Mapping: A/← left, D/→ right, W/↑/Space jump, Esc pause, M mute.
  */
 
-export type PressAction = "jump" | "confirm" | "pause" | "mute" | "restart";
+export type PressAction = "jump" | "confirm" | "pause" | "mute" | "restart" | "debug";
 
 class InputState {
   left = false;
@@ -47,6 +47,7 @@ export function bindKeyboard(): () => void {
       case "Escape": input.press("pause"); break;
       case "KeyM": input.press("mute"); break;
       case "KeyR": input.press("restart"); break;
+      case "KeyG": input.press("debug"); break;
       default: break;
     }
     if (JUMP_KEYS.has(e.code)) {

@@ -106,7 +106,7 @@ export class Player implements Body {
     }
 
     // --- flag ---
-    if (overlaps(this, { x: level.flag.x - 6, y: level.flag.y - 4.2 * TILE, w: 40, h: 4.2 * TILE })) {
+    if (overlaps(this, { x: level.flag.x - 40, y: level.flag.y - 4.2 * TILE, w: 88, h: 4.2 * TILE })) {
       this.finished = true;
       this.vx = 0;
       emit("flag", this.cx, this.cy);

@@ -222,6 +222,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudInfo): void {
   ctx.save();
   ctx.font = "bold 18px monospace";
   ctx.textBaseline = "top";
+  ctx.textAlign = "left";
   for (let i = 0; i < 3; i++) drawHeart(ctx, 14 + i * 26, 14, i < hud.lives);
   ctx.fillStyle = PALETTE.coin;
   ctx.beginPath();

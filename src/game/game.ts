@@ -14,6 +14,7 @@ import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, PALETTE } f
 
 export type GameState = "title" | "playing" | "paused" | "gameover" | "victory";
 
+const DEBUG = typeof location !== "undefined" && location.search.includes("debug=1");
 const START_LIVES = 3;
 const COIN_SCORE = 10;
 const STOMP_SCORE = 50;
@@ -175,6 +176,13 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
           }
           runTime += dt;
           deathFlash = Math.max(0, deathFlash - dt);
+
+          // dev-only: ?debug=1 in the URL enables teleport-to-flag on G (verification aid)
+          if (DEBUG && input.consume("debug")) {
+            player.x = level.flag.x - 30;
+            player.y = level.flag.y - 64;
+            player.vx = 0; player.vy = 0;
+          }
 
           const wantJump = input.consume("jump");
           player.update(dt, level, input.moveX, wantJump, input.jumpHeld, onPlayerEvent);
