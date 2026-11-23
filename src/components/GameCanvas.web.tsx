@@ -13,6 +13,8 @@ export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameRef = useRef<GameHandle | null>(null);
   const [muted, setMuted] = useState(false);
+  // touch controls only make sense on touch devices
+  const isTouch = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,6 +36,7 @@ export default function GameCanvas() {
       })}
 
       {/* touch controls */}
+      {isTouch && (
       <View style={styles.controls} pointerEvents="box-none">
         <View style={styles.cluster}>
           <HoldButton
@@ -59,6 +62,7 @@ export default function GameCanvas() {
           />
         </View>
       </View>
+      )}
     </View>
   );
 }
