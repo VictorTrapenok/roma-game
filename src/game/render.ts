@@ -3,7 +3,7 @@
  * space-nebula backdrop (gradient sky as fallback), two parallax hill layers,
  * chunky tiles with grass tops, glowing hero sprite (rect player as fallback)
  * with squash-and-stretch, armed-goose walker sprites (rect fallback),
- * animated coins/flag, HUD hearts.
+ * flexed-arm collectibles (coin fallback), animated flag, HUD hearts.
  * Everything is drawn in the logical 960x544 space; boot.ts sets the transform.
  */
 
@@ -35,6 +35,7 @@ export const PALETTE = {
 let bgImage: HTMLImageElement | null = null;
 let playerImage: HTMLImageElement | null = null;
 let walkerImage: HTMLImageElement | null = null;
+let coinImage: HTMLImageElement | null = null;
 
 /** Nebula backdrop loaded by game.ts; the gradient sky below is the fallback until it is ready. */
 export function setBackgroundImage(img: HTMLImageElement): void {
@@ -49,6 +50,11 @@ export function setPlayerImage(img: HTMLImageElement): void {
 /** Armed-goose enemy sprite loaded by game.ts; rect walkers are the fallback until it is ready. */
 export function setWalkerImage(img: HTMLImageElement): void {
   walkerImage = img;
+}
+
+/** Flexed-arm collectible sprite loaded by game.ts; gold ellipses are the fallback until it is ready. */
+export function setCoinImage(img: HTMLImageElement): void {
+  coinImage = img;
 }
 
 function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number): void {
@@ -148,6 +154,15 @@ function drawCoins(ctx: CanvasRenderingContext2D, level: LevelData, camX: number
     if (x < -TILE || x > VIEW_W + TILE) continue;
     const y = coin.y + Math.sin(t * 2.4 + coin.phase) * 3;
     const squashX = Math.abs(Math.cos(t * 3 + coin.phase)); // spin
+
+    const img = coinImage;
+    if (img && img.complete && img.naturalWidth > 0) {
+      const h = 26;
+      const w = h * (img.naturalWidth / img.naturalHeight) * Math.max(0.15, squashX);
+      ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
+      continue;
+    }
+
     ctx.fillStyle = PALETTE.coinEdge;
     ctx.beginPath();
     ctx.ellipse(x, y, 9 * squashX + 1, 10, 0, 0, Math.PI * 2);
@@ -289,10 +304,17 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudInfo): void {
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   for (let i = 0; i < 3; i++) drawHeart(ctx, 14 + i * 26, 14, i < hud.lives);
-  ctx.fillStyle = PALETTE.coin;
-  ctx.beginPath();
-  ctx.ellipse(26, 50, 8, 9, 0, 0, Math.PI * 2);
-  ctx.fill();
+  const img = coinImage;
+  if (img && img.complete && img.naturalWidth > 0) {
+    const h = 20;
+    const w = h * (img.naturalWidth / img.naturalHeight);
+    ctx.drawImage(img, 26 - w / 2, 50 - h / 2, w, h);
+  } else {
+    ctx.fillStyle = PALETTE.coin;
+    ctx.beginPath();
+    ctx.ellipse(26, 50, 8, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.fillStyle = PALETTE.hudText;
   ctx.fillText(`× ${hud.coins}/${hud.totalCoins}`, 42, 41);
   ctx.fillText(`СЧЁТ ${hud.score}`, 14, 70);
