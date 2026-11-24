@@ -32,7 +32,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Export static web build
-        run: npx expo export --platform web
+        run: npm run export:web
 
       - name: Publish dist to gh-pages branch
         run: |

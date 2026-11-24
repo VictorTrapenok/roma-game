@@ -7,7 +7,7 @@
     "start": "expo start",
     "web": "expo start --web",
     "android": "expo start --android",
-    "export:web": "expo export --platform web",
+    "export:web": "expo export --platform web && node scripts/add-splash.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
