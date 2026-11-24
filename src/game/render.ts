@@ -1,7 +1,8 @@
 /**
  * render.ts — all canvas drawing. Unified pixel-art direction:
- * deep-sky gradient, two parallax hill layers, chunky tiles with grass tops,
- * squash-and-stretch player, animated coins/walkers/flag, HUD hearts.
+ * space-nebula backdrop (gradient sky as fallback), two parallax hill layers,
+ * chunky tiles with grass tops, squash-and-stretch player, animated
+ * coins/walkers/flag, HUD hearts.
  * Everything is drawn in the logical 960x544 space; boot.ts sets the transform.
  */
 
@@ -30,12 +31,34 @@ export const PALETTE = {
   hudText: "#ffffff",
 } as const;
 
+let bgImage: HTMLImageElement | null = null;
+
+/** Nebula backdrop loaded by game.ts; the gradient sky below is the fallback until it is ready. */
+export function setBackgroundImage(img: HTMLImageElement): void {
+  bgImage = img;
+}
+
 function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number): void {
-  const g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-  g.addColorStop(0, PALETTE.skyTop);
-  g.addColorStop(1, PALETTE.skyBottom);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const img = bgImage;
+  if (img && img.complete && img.naturalWidth > 0) {
+    // cover-fit the artwork into the logical view
+    const scale = Math.max(VIEW_W / img.naturalWidth, VIEW_H / img.naturalHeight);
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+    ctx.drawImage(img, (VIEW_W - w) / 2, (VIEW_H - h) / 2, w, h);
+  } else {
+    const g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+    g.addColorStop(0, PALETTE.skyTop);
+    g.addColorStop(1, PALETTE.skyBottom);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+    // sun/moon
+    ctx.fillStyle = "#ffe9a3";
+    ctx.beginPath();
+    ctx.arc(VIEW_W - 140, 90, 34, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // stars (fixed pattern, twinkle)
   ctx.fillStyle = "rgba(255,255,255,0.7)";
@@ -47,12 +70,6 @@ function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number):
     ctx.fillRect(sx, sy, 2, 2);
   }
   ctx.globalAlpha = 1;
-
-  // sun/moon
-  ctx.fillStyle = "#ffe9a3";
-  ctx.beginPath();
-  ctx.arc(VIEW_W - 140, 90, 34, 0, Math.PI * 2);
-  ctx.fill();
 
   // parallax hills
   drawHills(ctx, camX * 0.25, 400, 150, PALETTE.hillFar);

@@ -4,13 +4,15 @@
  * physics live in the platform-agnostic modules (level/world/entities/particles).
  */
 
+import { Asset } from "expo-asset";
 import { GameLoop } from "./loop";
 import { input, bindKeyboard } from "./input";
 import { AudioSystem } from "./audio";
 import { buildLevel, LEVEL_W, VIEW_W, VIEW_H, type LevelData } from "./level";
 import { Player, Walker, type PlayerEvent } from "./entities";
 import { Particles } from "./particles";
-import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, PALETTE } from "./render";
+import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, setBackgroundImage, PALETTE } from "./render";
+import bgNebula from "../../assets/bg-nebula.jpg";
 
 export type GameState = "title" | "playing" | "paused" | "gameover" | "victory";
 
@@ -47,6 +49,10 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   const audio = new AudioSystem();
   const particles = new Particles();
   const unbind = bindKeyboard();
+
+  const bg = new Image();
+  bg.onload = () => setBackgroundImage(bg);
+  bg.src = Asset.fromModule(bgNebula).uri;
 
   let state: GameState = "title";
   let level: LevelData = buildLevel();
