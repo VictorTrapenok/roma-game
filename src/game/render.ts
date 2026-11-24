@@ -207,7 +207,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, p: Player, camX: number, t: n
   const img = playerImage;
   if (img && img.complete && img.naturalWidth > 0) {
     // sprite is drawn larger than the hitbox, anchored bottom-center
-    const baseH = p.h * 1.6;
+    const baseH = p.h * 1.8;
     const baseW = baseH * (img.naturalWidth / img.naturalHeight);
     const w = (baseW * sq) / stretch;
     const h = (baseH * stretch) / sq;
