@@ -2,7 +2,8 @@
  * render.ts — all canvas drawing. Unified pixel-art direction:
  * space-nebula backdrop (gradient sky as fallback), two parallax hill layers,
  * chunky tiles with grass tops, glowing hero sprite (rect player as fallback)
- * with squash-and-stretch, animated coins/walkers/flag, HUD hearts.
+ * with squash-and-stretch, armed-goose walker sprites (rect fallback),
+ * animated coins/flag, HUD hearts.
  * Everything is drawn in the logical 960x544 space; boot.ts sets the transform.
  */
 
@@ -33,6 +34,7 @@ export const PALETTE = {
 
 let bgImage: HTMLImageElement | null = null;
 let playerImage: HTMLImageElement | null = null;
+let walkerImage: HTMLImageElement | null = null;
 
 /** Nebula backdrop loaded by game.ts; the gradient sky below is the fallback until it is ready. */
 export function setBackgroundImage(img: HTMLImageElement): void {
@@ -42,6 +44,11 @@ export function setBackgroundImage(img: HTMLImageElement): void {
 /** Glowing hero sprite loaded by game.ts; the rect player below is the fallback until it is ready. */
 export function setPlayerImage(img: HTMLImageElement): void {
   playerImage = img;
+}
+
+/** Armed-goose enemy sprite loaded by game.ts; rect walkers are the fallback until it is ready. */
+export function setWalkerImage(img: HTMLImageElement): void {
+  walkerImage = img;
 }
 
 function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number): void {
@@ -230,6 +237,22 @@ function drawWalkers(ctx: CanvasRenderingContext2D, walkers: Walker[], camX: num
     const x = w.x - camX;
     if (x < -TILE * 2 || x > VIEW_W + TILE * 2) continue;
     const bob = Math.abs(Math.sin(w.anim * 8)) * 2;
+
+    const img = walkerImage;
+    if (img && img.complete && img.naturalWidth > 0) {
+      // sprite is drawn larger than the hitbox, anchored bottom-center
+      const baseH = w.h * 2.2;
+      const baseW = baseH * (img.naturalWidth / img.naturalHeight);
+      const tilt = Math.sin(w.anim * 8) * 0.05;
+      ctx.save();
+      ctx.translate(x + w.w / 2, w.y + w.h - bob);
+      if (w.dir === 1) ctx.scale(-1, 1); // artwork faces left
+      ctx.rotate(tilt);
+      ctx.drawImage(img, -baseW / 2, -baseH, baseW, baseH);
+      ctx.restore();
+      continue;
+    }
+
     ctx.fillStyle = PALETTE.enemy;
     ctx.fillRect(x, w.y + bob, w.w, w.h - bob);
     ctx.fillStyle = PALETTE.enemyDark;

@@ -11,9 +11,10 @@ import { AudioSystem } from "./audio";
 import { buildLevel, LEVEL_W, VIEW_W, VIEW_H, type LevelData } from "./level";
 import { Player, Walker, type PlayerEvent } from "./entities";
 import { Particles } from "./particles";
-import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, setBackgroundImage, setPlayerImage, PALETTE } from "./render";
+import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, setBackgroundImage, setPlayerImage, setWalkerImage, PALETTE } from "./render";
 import bgNebula from "../../assets/bg-nebula.jpg";
 import heroSprite from "../../assets/hero.png";
+import gooseSprite from "../../assets/enemy-goose.png";
 
 export type GameState = "title" | "playing" | "paused" | "gameover" | "victory";
 
@@ -58,6 +59,10 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   const hero = new Image();
   hero.onload = () => setPlayerImage(hero);
   hero.src = Asset.fromModule(heroSprite).uri;
+
+  const goose = new Image();
+  goose.onload = () => setWalkerImage(goose);
+  goose.src = Asset.fromModule(gooseSprite).uri;
 
   let state: GameState = "title";
   let level: LevelData = buildLevel();
