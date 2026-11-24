@@ -1,8 +1,8 @@
 /**
  * render.ts — all canvas drawing. Unified pixel-art direction:
  * space-nebula backdrop (gradient sky as fallback), two parallax hill layers,
- * chunky tiles with grass tops, squash-and-stretch player, animated
- * coins/walkers/flag, HUD hearts.
+ * chunky tiles with grass tops, glowing hero sprite (rect player as fallback)
+ * with squash-and-stretch, animated coins/walkers/flag, HUD hearts.
  * Everything is drawn in the logical 960x544 space; boot.ts sets the transform.
  */
 
@@ -32,10 +32,16 @@ export const PALETTE = {
 } as const;
 
 let bgImage: HTMLImageElement | null = null;
+let playerImage: HTMLImageElement | null = null;
 
 /** Nebula backdrop loaded by game.ts; the gradient sky below is the fallback until it is ready. */
 export function setBackgroundImage(img: HTMLImageElement): void {
   bgImage = img;
+}
+
+/** Glowing hero sprite loaded by game.ts; the rect player below is the fallback until it is ready. */
+export function setPlayerImage(img: HTMLImageElement): void {
+  playerImage = img;
 }
 
 function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number): void {
@@ -175,6 +181,25 @@ function drawPlayer(ctx: CanvasRenderingContext2D, p: Player, camX: number, t: n
   // squash & stretch
   const sq = p.squash > 0 ? 1 + p.squash * 2.2 : 1;
   const stretch = !p.onGround ? 1 + Math.min(0.25, Math.abs(p.vy) / 2400) : 1;
+
+  const img = playerImage;
+  if (img && img.complete && img.naturalWidth > 0) {
+    // sprite is drawn larger than the hitbox, anchored bottom-center
+    const baseH = p.h * 1.6;
+    const baseW = baseH * (img.naturalWidth / img.naturalHeight);
+    const w = (baseW * sq) / stretch;
+    const h = (baseH * stretch) / sq;
+    const running = p.onGround && Math.abs(p.vx) > 30;
+    const tilt = running ? Math.sin(p.runTime * 18) * 0.07 : 0;
+    ctx.save();
+    ctx.translate(x + p.w / 2, y + p.h);
+    if (p.facing === 1) ctx.scale(-1, 1); // artwork faces left
+    ctx.rotate(tilt);
+    ctx.drawImage(img, -w / 2, -h, w, h);
+    ctx.restore();
+    return;
+  }
+
   const w = p.w * sq / stretch;
   const h = p.h * stretch / sq;
   const dx = x + (p.w - w) / 2;
