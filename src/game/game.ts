@@ -11,11 +11,17 @@ import { AudioSystem } from "./audio";
 import { buildLevel, LEVEL_W, VIEW_W, VIEW_H, type LevelData } from "./level";
 import { Player, Walker, type PlayerEvent } from "./entities";
 import { Particles } from "./particles";
-import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, setBackgroundImage, setPlayerImage, setWalkerImage, setCoinImage, PALETTE } from "./render";
+import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, setBackgroundImage, setPlayerImage, setWalkerImage, setCoinImage, setPlanetImage, PALETTE } from "./render";
 import bgNebula from "../../assets/bg-nebula.jpg";
 import heroSprite from "../../assets/hero.png";
 import gooseSprite from "../../assets/enemy-goose.png";
 import muscleSprite from "../../assets/coin-muscle.png";
+import planetEarth from "../../assets/planet-earth.png";
+import planetMoon from "../../assets/planet-moon.png";
+import planetJungle from "../../assets/planet-jungle.png";
+import planetLava from "../../assets/planet-lava.png";
+import planetCrystal from "../../assets/planet-crystal.png";
+import planetJupiter from "../../assets/planet-jupiter.png";
 
 export type GameState = "title" | "playing" | "paused" | "gameover" | "victory";
 
@@ -68,6 +74,13 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   const muscle = new Image();
   muscle.onload = () => setCoinImage(muscle);
   muscle.src = Asset.fromModule(muscleSprite).uri;
+
+  const planetSprites = [planetEarth, planetMoon, planetJungle, planetLava, planetCrystal, planetJupiter];
+  planetSprites.forEach((mod, i) => {
+    const img = new Image();
+    img.onload = () => setPlanetImage(i, img);
+    img.src = Asset.fromModule(mod).uri;
+  });
 
   let state: GameState = "title";
   let level: LevelData = buildLevel();

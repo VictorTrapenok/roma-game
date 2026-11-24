@@ -1,6 +1,7 @@
 /**
  * render.ts — all canvas drawing. Unified pixel-art direction:
- * space-nebula backdrop (gradient sky as fallback), two parallax hill layers,
+ * space-nebula backdrop (gradient sky as fallback), a parallax layer of
+ * planets spread across the whole map, two parallax hill layers,
  * chunky tiles with grass tops, glowing hero sprite (rect player as fallback)
  * with squash-and-stretch, armed-goose walker sprites (rect fallback),
  * flexed-arm collectibles (coin fallback), animated flag, HUD hearts.
@@ -36,6 +37,7 @@ let bgImage: HTMLImageElement | null = null;
 let playerImage: HTMLImageElement | null = null;
 let walkerImage: HTMLImageElement | null = null;
 let coinImage: HTMLImageElement | null = null;
+const planetImages: (HTMLImageElement | null)[] = [];
 
 /** Nebula backdrop loaded by game.ts; the gradient sky below is the fallback until it is ready. */
 export function setBackgroundImage(img: HTMLImageElement): void {
@@ -55,6 +57,11 @@ export function setWalkerImage(img: HTMLImageElement): void {
 /** Flexed-arm collectible sprite loaded by game.ts; gold ellipses are the fallback until it is ready. */
 export function setCoinImage(img: HTMLImageElement): void {
   coinImage = img;
+}
+
+/** Planet sprites for the parallax sky layer, indexed to match PLANET_SPOTS below. */
+export function setPlanetImage(i: number, img: HTMLImageElement): void {
+  planetImages[i] = img;
 }
 
 function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number): void {
@@ -90,9 +97,34 @@ function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number):
   }
   ctx.globalAlpha = 1;
 
+  // planets drifting across the whole map on a slow parallax layer
+  drawPlanets(ctx, camX);
+
   // parallax hills
   drawHills(ctx, camX * 0.25, 400, 150, PALETTE.hillFar);
   drawHills(ctx, camX * 0.5, 470, 110, PALETTE.hillNear);
+}
+
+const PLANET_PARALLAX = 0.35;
+// fx: where along the camera journey the planet is centered (0 = start, 1 = flag)
+const PLANET_SPOTS = [
+  { i: 0, fx: 0.0, y: 60 },   // earth greets at the start
+  { i: 1, fx: 0.2, y: 130 },  // moon
+  { i: 2, fx: 0.4, y: 55 },   // jungle
+  { i: 3, fx: 0.6, y: 140 },  // lava
+  { i: 4, fx: 0.8, y: 70 },   // crystal
+  { i: 5, fx: 1.0, y: 120 },  // jupiter at the flag
+];
+
+function drawPlanets(ctx: CanvasRenderingContext2D, camX: number): void {
+  const camMax = COLS * TILE - VIEW_W;
+  for (const s of PLANET_SPOTS) {
+    const img = planetImages[s.i];
+    if (!img || !img.complete || img.naturalWidth === 0) continue;
+    const x = VIEW_W / 2 + (s.fx * camMax - camX) * PLANET_PARALLAX;
+    if (x < -img.naturalWidth || x > VIEW_W + img.naturalWidth) continue;
+    ctx.drawImage(img, x - img.naturalWidth / 2, s.y);
+  }
 }
 
 function drawHills(ctx: CanvasRenderingContext2D, offset: number, base: number, amp: number, color: string): void {
