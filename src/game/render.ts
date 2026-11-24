@@ -108,7 +108,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number):
 const PLANET_PARALLAX = 0.35;
 // fx: where along the camera journey the planet is centered (0 = start, 1 = flag)
 const PLANET_SPOTS = [
-  { i: 0, fx: 0.0, y: 60 },   // earth greets at the start
+  { i: 0, fx: 0.0, y: 60 },   // treadmill greets at the start
   { i: 1, fx: 0.2, y: 130 },  // moon
   { i: 2, fx: 0.4, y: 55 },   // jungle
   { i: 3, fx: 0.6, y: 140 },  // lava

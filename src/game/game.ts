@@ -16,7 +16,7 @@ import bgNebula from "../../assets/bg-nebula.jpg";
 import heroSprite from "../../assets/hero.png";
 import gooseSprite from "../../assets/enemy-goose.png";
 import muscleSprite from "../../assets/coin-muscle.png";
-import planetEarth from "../../assets/planet-earth.png";
+import planetTreadmill from "../../assets/planet-treadmill.png";
 import planetMoon from "../../assets/planet-moon.png";
 import planetJungle from "../../assets/planet-jungle.png";
 import planetLava from "../../assets/planet-lava.png";
@@ -75,7 +75,7 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   muscle.onload = () => setCoinImage(muscle);
   muscle.src = Asset.fromModule(muscleSprite).uri;
 
-  const planetSprites = [planetEarth, planetMoon, planetJungle, planetLava, planetCrystal, planetJupiter];
+  const planetSprites = [planetTreadmill, planetMoon, planetJungle, planetLava, planetCrystal, planetJupiter];
   planetSprites.forEach((mod, i) => {
     const img = new Image();
     img.onload = () => setPlanetImage(i, img);
