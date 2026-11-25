@@ -8,7 +8,7 @@
  * Everything is drawn in the logical 960x544 space; boot.ts sets the transform.
  */
 
-import { COLS, LEVEL_H, ROWS, TILE, VIEW_H, VIEW_W, type LevelData } from "./level";
+import { LEVEL_H, ROWS, TILE, VIEW_H, VIEW_W, type LevelData } from "./level";
 import type { Player, Walker } from "./entities";
 
 export const PALETTE = {
@@ -64,7 +64,7 @@ export function setPlanetImage(i: number, img: HTMLImageElement): void {
   planetImages[i] = img;
 }
 
-function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number): void {
+function drawBackground(ctx: CanvasRenderingContext2D, level: LevelData, camX: number, t: number): void {
   const img = bgImage;
   if (img && img.complete && img.naturalWidth > 0) {
     // cover-fit the artwork into the logical view
@@ -98,7 +98,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, camX: number, t: number):
   ctx.globalAlpha = 1;
 
   // planets drifting across the whole map on a slow parallax layer
-  drawPlanets(ctx, camX);
+  drawPlanets(ctx, level, camX);
 
   // parallax hills
   drawHills(ctx, camX * 0.25, 400, 150, PALETTE.hillFar);
@@ -116,8 +116,8 @@ const PLANET_SPOTS = [
   { i: 5, fx: 1.0, y: 120 },  // jupiter at the flag
 ];
 
-function drawPlanets(ctx: CanvasRenderingContext2D, camX: number): void {
-  const camMax = COLS * TILE - VIEW_W;
+function drawPlanets(ctx: CanvasRenderingContext2D, level: LevelData, camX: number): void {
+  const camMax = level.cols * TILE - VIEW_W;
   for (const s of PLANET_SPOTS) {
     const img = planetImages[s.i];
     if (!img || !img.complete || img.naturalWidth === 0) continue;
@@ -143,14 +143,14 @@ function drawHills(ctx: CanvasRenderingContext2D, offset: number, base: number, 
 
 function drawTiles(ctx: CanvasRenderingContext2D, level: LevelData, camX: number): void {
   const c0 = Math.max(0, Math.floor(camX / TILE) - 1);
-  const c1 = Math.min(COLS - 1, Math.floor((camX + VIEW_W) / TILE) + 1);
+  const c1 = Math.min(level.cols - 1, Math.floor((camX + VIEW_W) / TILE) + 1);
   for (let r = 0; r < ROWS; r++) {
     for (let c = c0; c <= c1; c++) {
-      const i = r * COLS + c;
+      const i = r * level.cols + c;
       const x = c * TILE - camX;
       const y = r * TILE;
       if (level.solid[i] === 1) {
-        const aboveOpen = r === 0 || level.solid[(r - 1) * COLS + c] !== 1;
+        const aboveOpen = r === 0 || level.solid[(r - 1) * level.cols + c] !== 1;
         ctx.fillStyle = PALETTE.dirt;
         ctx.fillRect(x, y, TILE, TILE);
         ctx.fillStyle = PALETTE.dirtDark;
@@ -319,6 +319,8 @@ export interface HudInfo {
   totalCoins: number;
   score: number;
   time: number;
+  round: number;
+  rounds: number;
 }
 
 function drawHeart(ctx: CanvasRenderingContext2D, x: number, y: number, filled: boolean): void {
@@ -350,6 +352,9 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudInfo): void {
   ctx.fillStyle = PALETTE.hudText;
   ctx.fillText(`× ${hud.coins}/${hud.totalCoins}`, 42, 41);
   ctx.fillText(`СЧЁТ ${hud.score}`, 14, 70);
+  ctx.fillStyle = "#9adcff";
+  ctx.fillText(`РАУНД ${hud.round}/${hud.rounds}`, 14, 98);
+  ctx.fillStyle = PALETTE.hudText;
   const mm = Math.floor(hud.time / 60);
   const ss = Math.floor(hud.time % 60).toString().padStart(2, "0");
   ctx.textAlign = "right";
@@ -366,7 +371,7 @@ export function drawWorld(
   t: number,
   hud: HudInfo,
 ): void {
-  drawBackground(ctx, camX, t);
+  drawBackground(ctx, level, camX, t);
   ctx.save();
   drawTiles(ctx, level, camX);
   drawFlag(ctx, level, camX, t);
@@ -404,11 +409,21 @@ export function drawTitle(ctx: CanvasRenderingContext2D, t: number, best: number
   panel(ctx, 0.45);
   const bob = Math.sin(t * 2) * 6;
   bigText(ctx, "PIXEL JUMPER", 170 + bob, 64, PALETTE.coin);
-  smallText(ctx, "Прыгай, топчи врагов, собирай монеты и доберись до флага!", 240);
-  smallText(ctx, "A / D или ← → — бег     W / ПРОБЕЛ / ↑ — прыжок", 300);
-  smallText(ctx, "ESC — пауза     M — звук", 330);
-  if (Math.floor(t * 1.6) % 2 === 0) smallText(ctx, "— НАЖМИ ПРОБЕЛ, ЧТОБЫ НАЧАТЬ —", 400, PALETTE.coin);
-  if (best > 0) smallText(ctx, `Рекорд: ${best}`, 460, "#9adcff");
+  smallText(ctx, "Прыгай, топчи гусей, собирай бицепсы и доберись до флага!", 240);
+  smallText(ctx, "Впереди 2 раунда — второй длиннее и злее", 270);
+  smallText(ctx, "A / D или ← → — бег     W / ПРОБЕЛ / ↑ — прыжок", 320);
+  smallText(ctx, "ESC — пауза     M — звук", 350);
+  if (Math.floor(t * 1.6) % 2 === 0) smallText(ctx, "— НАЖМИ ПРОБЕЛ, ЧТОБЫ НАЧАТЬ —", 410, PALETTE.coin);
+  if (best > 0) smallText(ctx, `Рекорд: ${best}`, 465, "#9adcff");
+}
+
+export function drawRoundClear(ctx: CanvasRenderingContext2D, round: number, bonus: number, t: number): void {
+  panel(ctx, 0.55);
+  const bob = Math.sin(t * 2.4) * 5;
+  bigText(ctx, `РАУНД ${round} ПРОЙДЕН!`, 190 + bob, 48, PALETTE.coin);
+  smallText(ctx, `Бонус: +${bonus}`, 255);
+  smallText(ctx, "Впереди раунд 2: длиннее, больше шипов и целая армия гусей", 305);
+  if (Math.floor(t * 1.6) % 2 === 0) smallText(ctx, "ПРОБЕЛ — вперёд", 370, PALETTE.coin);
 }
 
 export function drawPause(ctx: CanvasRenderingContext2D): void {

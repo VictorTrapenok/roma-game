@@ -8,10 +8,10 @@ import { Asset } from "expo-asset";
 import { GameLoop } from "./loop";
 import { input, bindKeyboard } from "./input";
 import { AudioSystem } from "./audio";
-import { buildLevel, LEVEL_W, VIEW_W, VIEW_H, type LevelData } from "./level";
+import { buildLevel, TOTAL_ROUNDS, TILE, VIEW_W, VIEW_H, type LevelData } from "./level";
 import { Player, Walker, type PlayerEvent } from "./entities";
 import { Particles } from "./particles";
-import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, setBackgroundImage, setPlayerImage, setWalkerImage, setCoinImage, setPlanetImage, PALETTE } from "./render";
+import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, drawRoundClear, setBackgroundImage, setPlayerImage, setWalkerImage, setCoinImage, setPlanetImage, PALETTE } from "./render";
 import bgNebula from "../../assets/bg-nebula.jpg";
 import heroSprite from "../../assets/hero.png";
 import gooseSprite from "../../assets/enemy-goose.png";
@@ -23,12 +23,14 @@ import planetLava from "../../assets/planet-lava.png";
 import planetCrystal from "../../assets/planet-crystal.png";
 import planetJupiter from "../../assets/planet-jupiter.png";
 
-export type GameState = "title" | "playing" | "paused" | "gameover" | "victory";
+export type GameState = "title" | "playing" | "paused" | "gameover" | "victory" | "roundclear";
 
 const DEBUG = typeof location !== "undefined" && location.search.includes("debug=1");
 const START_LIVES = 3;
 const COIN_SCORE = 10;
 const STOMP_SCORE = 50;
+const ROUND_CLEAR_BONUS = 250;
+const GOOSE_SPEED: Record<number, number> = { 1: 55, 2: 78 };
 const BEST_KEY = "pixeljumper.best";
 
 function readBest(): number {
@@ -83,7 +85,8 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   });
 
   let state: GameState = "title";
-  let level: LevelData = buildLevel();
+  let round = 1;
+  let level: LevelData = buildLevel(1);
   const player = new Player();
   let walkers: Walker[] = [];
   let lives = START_LIVES;
@@ -91,23 +94,41 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   let coinsCollected = 0;
   let runTime = 0;
   let victoryBonus = 0;
+  let roundBonus = 0;
   let best = readBest();
   let camX = 0;
   let clock = 0;
   let deathFlash = 0;
 
-  function resetRun(): void {
-    level = buildLevel();
+  function spawnWalkers(lv: LevelData): Walker[] {
+    const speed = GOOSE_SPEED[lv.round] ?? 55;
+    return lv.enemySpawns.map((s, i) => new Walker(s, i % 2 === 0 ? 1 : -1, speed));
+  }
+
+  function loadRound(n: number): void {
+    round = n;
+    level = buildLevel(round);
     player.reset(level.spawn);
-    walkers = level.enemySpawns.map((s, i) => new Walker(s, i % 2 === 0 ? 1 : -1));
-    lives = START_LIVES;
-    score = 0;
+    walkers = spawnWalkers(level);
     coinsCollected = 0;
-    runTime = 0;
-    victoryBonus = 0;
     camX = 0;
   }
+
+  function resetRun(): void {
+    loadRound(1);
+    lives = START_LIVES;
+    score = 0;
+    runTime = 0;
+    victoryBonus = 0;
+    roundBonus = 0;
+  }
+
   resetRun();
+  // dev-only: ?debug=1&round=2 boots straight into a given round (verification aid)
+  if (DEBUG) {
+    const urlRound = Number(new URLSearchParams(location.search).get("round")) || 1;
+    if (urlRound >= 1 && urlRound <= TOTAL_ROUNDS) loadRound(urlRound);
+  }
 
   function transition(next: GameState): void {
     state = next;
@@ -162,6 +183,14 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
         }
         break;
       case "flag": {
+        if (round < TOTAL_ROUNDS) {
+          roundBonus = ROUND_CLEAR_BONUS;
+          score += roundBonus;
+          audio.sfx("win");
+          particles.burst(x, y, 20, PALETTE.coin, 220, 0.8, 4);
+          transition("roundclear");
+          break;
+        }
         victoryBonus = Math.max(0, 1500 - Math.floor(runTime) * 10);
         score += victoryBonus;
         saveBest();
@@ -197,6 +226,14 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
         case "victory":
           if (input.consume("confirm")) {
             resetRun();
+            transition("playing");
+            audio.sfx("ui");
+          }
+          return;
+
+        case "roundclear":
+          if (input.consume("confirm")) {
+            loadRound(round + 1);
             transition("playing");
             audio.sfx("ui");
           }
@@ -240,7 +277,7 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
           particles.update(dt);
 
           const target = player.cx + player.facing * 60 - VIEW_W * 0.45;
-          const clamped = Math.max(0, Math.min(LEVEL_W - VIEW_W, target));
+          const clamped = Math.max(0, Math.min(level.cols * TILE - VIEW_W, target));
           camX += (clamped - camX) * Math.min(1, dt * 8);
           return;
         }
@@ -268,6 +305,7 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
 
       drawWorld(ctx, level, player, walkers, camX, clock, {
         lives, coins: coinsCollected, totalCoins: level.totalCoins, score, time: runTime,
+        round, rounds: TOTAL_ROUNDS,
       });
       particles.draw(ctx, camX);
 
@@ -281,6 +319,7 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
         case "paused": drawPause(ctx); break;
         case "gameover": drawGameOver(ctx, score, best); break;
         case "victory": drawVictory(ctx, score, victoryBonus, best, clock); break;
+        case "roundclear": drawRoundClear(ctx, round, roundBonus, clock); break;
         default: break;
       }
     },
@@ -300,7 +339,7 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
     },
     tap: () => {
       audio.unlock();
-      if (state === "title" || state === "gameover" || state === "victory") {
+      if (state === "title" || state === "gameover" || state === "victory" || state === "roundclear") {
         input.press("confirm");
       }
     },

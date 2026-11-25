@@ -131,19 +131,19 @@ export class Walker implements Body {
   dir: 1 | -1;
   alive = true;
   anim = 0;
+  private readonly speed: number;
 
-  constructor(spawn: EnemySpawn, dir: 1 | -1) {
+  constructor(spawn: EnemySpawn, dir: 1 | -1, speed = 55) {
     this.x = spawn.x; this.y = spawn.y;
     this.dir = dir;
+    this.speed = speed;
   }
-
-  private static readonly SPEED = 55;
 
   update(dt: number, level: LevelData): void {
     if (!this.alive) return;
     this.anim += dt;
     this.vy = Math.min(this.vy + PHYS.GRAVITY * dt, PHYS.MAX_FALL);
-    this.vx = this.dir * Walker.SPEED;
+    this.vx = this.dir * this.speed;
 
     const hitWall = moveX(this, level, dt);
     moveY(this, level, dt);
