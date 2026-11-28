@@ -34,7 +34,7 @@ export const PALETTE = {
 } as const;
 
 const bgImages: Record<number, HTMLImageElement> = {};
-let playerImage: HTMLImageElement | null = null;
+const playerImages: Record<number, HTMLImageElement> = {};
 let walkerImage: HTMLImageElement | null = null;
 let coinImage: HTMLImageElement | null = null;
 const planetImages: (HTMLImageElement | null)[] = [];
@@ -44,9 +44,9 @@ export function setBackgroundImage(round: number, img: HTMLImageElement): void {
   bgImages[round] = img;
 }
 
-/** Glowing hero sprite loaded by game.ts; the rect player below is the fallback until it is ready. */
-export function setPlayerImage(img: HTMLImageElement): void {
-  playerImage = img;
+/** Per-round hero sprite loaded by game.ts (1 = bodybuilder, 2 = horned viper); rect player is the fallback. */
+export function setPlayerImage(round: number, img: HTMLImageElement): void {
+  playerImages[round] = img;
 }
 
 /** Armed-goose enemy sprite loaded by game.ts; rect walkers are the fallback until it is ready. */
@@ -235,7 +235,7 @@ function drawFlag(ctx: CanvasRenderingContext2D, level: LevelData, camX: number,
   ctx.fill();
 }
 
-function drawPlayer(ctx: CanvasRenderingContext2D, p: Player, camX: number, t: number): void {
+function drawPlayer(ctx: CanvasRenderingContext2D, p: Player, camX: number, t: number, round: number): void {
   if (p.dead) return;
   if (p.invuln > 0 && Math.floor(t * 14) % 2 === 0) return; // invincibility blink
   const x = p.x - camX;
@@ -244,10 +244,12 @@ function drawPlayer(ctx: CanvasRenderingContext2D, p: Player, camX: number, t: n
   const sq = p.squash > 0 ? 1 + p.squash * 2.2 : 1;
   const stretch = !p.onGround ? 1 + Math.min(0.25, Math.abs(p.vy) / 2400) : 1;
 
-  const img = playerImage;
+  const img = playerImages[round] ?? playerImages[1];
   if (img && img.complete && img.naturalWidth > 0) {
-    // sprite is drawn larger than the hitbox, anchored bottom-center
-    const baseH = p.h * 1.8;
+    // sprite is drawn larger than the hitbox, anchored bottom-center;
+    // the viper is a long low slitherer, the bodybuilder stands tall
+    const snake = round >= 2;
+    const baseH = snake ? 22 : p.h * 1.8;
     const baseW = baseH * (img.naturalWidth / img.naturalHeight);
     const w = (baseW * sq) / stretch;
     const h = (baseH * stretch) / sq;
@@ -255,7 +257,8 @@ function drawPlayer(ctx: CanvasRenderingContext2D, p: Player, camX: number, t: n
     const tilt = running ? Math.sin(p.runTime * 18) * 0.07 : 0;
     ctx.save();
     ctx.translate(x + p.w / 2, y + p.h);
-    if (p.facing === 1) ctx.scale(-1, 1); // artwork faces left
+    // viper artwork faces right, bodybuilder faces left
+    if (snake ? p.facing === -1 : p.facing === 1) ctx.scale(-1, 1);
     ctx.rotate(tilt);
     ctx.drawImage(img, -w / 2, -h, w, h);
     ctx.restore();
@@ -387,7 +390,7 @@ export function drawWorld(
   drawFlag(ctx, level, camX, t);
   drawCoins(ctx, level, camX, t);
   drawWalkers(ctx, walkers, camX);
-  drawPlayer(ctx, player, camX, t);
+  drawPlayer(ctx, player, camX, t, level.round);
   ctx.restore();
   drawHud(ctx, hud);
 }

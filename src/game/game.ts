@@ -15,6 +15,7 @@ import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, drawRoundCl
 import bgNebula from "../../assets/bg-nebula.jpg";
 import bgDesert from "../../assets/bg-desert.jpg";
 import heroSprite from "../../assets/hero.png";
+import snakeSprite from "../../assets/hero-snake.png";
 import gooseSprite from "../../assets/enemy-goose.png";
 import muscleSprite from "../../assets/coin-muscle.png";
 import planetTreadmill from "../../assets/planet-treadmill.png";
@@ -71,8 +72,12 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   desert.src = Asset.fromModule(bgDesert).uri;
 
   const hero = new Image();
-  hero.onload = () => setPlayerImage(hero);
+  hero.onload = () => setPlayerImage(1, hero);
   hero.src = Asset.fromModule(heroSprite).uri;
+
+  const snake = new Image();
+  snake.onload = () => setPlayerImage(2, snake);
+  snake.src = Asset.fromModule(snakeSprite).uri;
 
   const goose = new Image();
   goose.onload = () => setWalkerImage(goose);
