@@ -1,7 +1,7 @@
 /**
  * render.ts — all canvas drawing. Unified pixel-art direction:
- * space-nebula backdrop (gradient sky as fallback), a parallax layer of
- * planets spread across the whole map, two parallax hill layers,
+ * per-round backdrop (round 1: space nebula with stars and a parallax planet
+ * layer; round 2: desert with sandy dunes), two parallax hill layers,
  * chunky tiles with grass tops, glowing hero sprite (rect player as fallback)
  * with squash-and-stretch, armed-goose walker sprites (rect fallback),
  * flexed-arm collectibles (coin fallback), animated flag, HUD hearts.
@@ -33,15 +33,15 @@ export const PALETTE = {
   hudText: "#ffffff",
 } as const;
 
-let bgImage: HTMLImageElement | null = null;
+const bgImages: Record<number, HTMLImageElement> = {};
 let playerImage: HTMLImageElement | null = null;
 let walkerImage: HTMLImageElement | null = null;
 let coinImage: HTMLImageElement | null = null;
 const planetImages: (HTMLImageElement | null)[] = [];
 
-/** Nebula backdrop loaded by game.ts; the gradient sky below is the fallback until it is ready. */
-export function setBackgroundImage(img: HTMLImageElement): void {
-  bgImage = img;
+/** Per-round backdrop loaded by game.ts (1 = nebula, 2 = desert); the gradient sky below is the fallback until it is ready. */
+export function setBackgroundImage(round: number, img: HTMLImageElement): void {
+  bgImages[round] = img;
 }
 
 /** Glowing hero sprite loaded by game.ts; the rect player below is the fallback until it is ready. */
@@ -65,7 +65,8 @@ export function setPlanetImage(i: number, img: HTMLImageElement): void {
 }
 
 function drawBackground(ctx: CanvasRenderingContext2D, level: LevelData, camX: number, t: number): void {
-  const img = bgImage;
+  const space = level.round === 1;
+  const img = bgImages[level.round] ?? bgImages[1];
   if (img && img.complete && img.naturalWidth > 0) {
     // cover-fit the artwork into the logical view
     const scale = Math.max(VIEW_W / img.naturalWidth, VIEW_H / img.naturalHeight);
@@ -86,23 +87,30 @@ function drawBackground(ctx: CanvasRenderingContext2D, level: LevelData, camX: n
     ctx.fill();
   }
 
-  // stars (fixed pattern, twinkle)
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
-  for (let i = 0; i < 40; i++) {
-    const sx = (i * 137) % VIEW_W;
-    const sy = (i * 89) % 220;
-    const tw = 0.4 + 0.6 * Math.abs(Math.sin(t * 1.3 + i));
-    ctx.globalAlpha = tw * 0.7;
-    ctx.fillRect(sx, sy, 2, 2);
+  if (space) {
+    // stars (fixed pattern, twinkle)
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    for (let i = 0; i < 40; i++) {
+      const sx = (i * 137) % VIEW_W;
+      const sy = (i * 89) % 220;
+      const tw = 0.4 + 0.6 * Math.abs(Math.sin(t * 1.3 + i));
+      ctx.globalAlpha = tw * 0.7;
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+
+    // planets drifting across the whole map on a slow parallax layer
+    drawPlanets(ctx, level, camX);
   }
-  ctx.globalAlpha = 1;
 
-  // planets drifting across the whole map on a slow parallax layer
-  drawPlanets(ctx, level, camX);
-
-  // parallax hills
-  drawHills(ctx, camX * 0.25, 400, 150, PALETTE.hillFar);
-  drawHills(ctx, camX * 0.5, 470, 110, PALETTE.hillNear);
+  // parallax hills — deep-space blue in round 1, sandy dunes in the desert
+  if (space) {
+    drawHills(ctx, camX * 0.25, 400, 150, PALETTE.hillFar);
+    drawHills(ctx, camX * 0.5, 470, 110, PALETTE.hillNear);
+  } else {
+    drawHills(ctx, camX * 0.25, 400, 150, "#d9b77c");
+    drawHills(ctx, camX * 0.5, 470, 110, "#bd9354");
+  }
 }
 
 const PLANET_PARALLAX = 0.35;
@@ -337,6 +345,8 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudInfo): void {
   ctx.font = "bold 18px monospace";
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
+  ctx.shadowColor = "rgba(0,0,0,0.75)";
+  ctx.shadowBlur = 4;
   for (let i = 0; i < 3; i++) drawHeart(ctx, 14 + i * 26, 14, i < hud.lives);
   const img = coinImage;
   if (img && img.complete && img.naturalWidth > 0) {

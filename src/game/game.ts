@@ -13,6 +13,7 @@ import { Player, Walker, type PlayerEvent } from "./entities";
 import { Particles } from "./particles";
 import { drawWorld, drawTitle, drawPause, drawGameOver, drawVictory, drawRoundClear, setBackgroundImage, setPlayerImage, setWalkerImage, setCoinImage, setPlanetImage, PALETTE } from "./render";
 import bgNebula from "../../assets/bg-nebula.jpg";
+import bgDesert from "../../assets/bg-desert.jpg";
 import heroSprite from "../../assets/hero.png";
 import gooseSprite from "../../assets/enemy-goose.png";
 import muscleSprite from "../../assets/coin-muscle.png";
@@ -62,8 +63,12 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
   const unbind = bindKeyboard();
 
   const bg = new Image();
-  bg.onload = () => setBackgroundImage(bg);
+  bg.onload = () => setBackgroundImage(1, bg);
   bg.src = Asset.fromModule(bgNebula).uri;
+
+  const desert = new Image();
+  desert.onload = () => setBackgroundImage(2, desert);
+  desert.src = Asset.fromModule(bgDesert).uri;
 
   const hero = new Image();
   hero.onload = () => setPlayerImage(hero);
