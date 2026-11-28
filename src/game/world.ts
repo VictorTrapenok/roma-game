@@ -81,8 +81,8 @@ export function touchesSpike(body: Body, level: LevelData): boolean {
   const bottom = Math.floor((body.y + body.h) / TILE);
   for (let r = top; r <= bottom; r++) {
     for (let c = left; c <= right; c++) {
-      if (c < 0 || c >= 170 || r < 0 || r >= 17) continue;
-      if (level.spike[r * 170 + c] === 1) {
+      if (c < 0 || c >= level.cols || r < 0 || r >= 17) continue;
+      if (level.spike[r * level.cols + c] === 1) {
         const box = { x: c * TILE + 7, y: r * TILE + 18, w: TILE - 14, h: TILE - 18 };
         if (overlaps(body, box)) return true;
       }

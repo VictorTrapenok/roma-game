@@ -16,6 +16,7 @@ export const VIEW_H = LEVEL_H;
 export const TOTAL_ROUNDS = 2;
 
 export interface Coin { x: number; y: number; taken: boolean; phase: number }
+export interface HeartPickup { x: number; y: number; taken: boolean; phase: number }
 export interface EnemySpawn { x: number; y: number }
 export interface Vec2 { x: number; y: number }
 
@@ -29,6 +30,8 @@ export interface LevelData {
   /** ROWS*cols grid: 1 = spikes sitting in this cell. */
   spike: Uint8Array;
   coins: Coin[];
+  /** heart pickups restore one life (or give bonus score at full health) */
+  hearts: HeartPickup[];
   enemySpawns: EnemySpawn[];
   spawn: Vec2;
   flag: Vec2; // base of the flag pole (on the ground)
@@ -50,6 +53,10 @@ function addCoin(level: LevelData, col: number, row: number): void {
   level.coins.push({ x: col * TILE + TILE / 2, y: row * TILE + TILE / 2, taken: false, phase: level.coins.length * 0.7 });
 }
 
+function addHeart(level: LevelData, col: number, row: number): void {
+  level.hearts.push({ x: col * TILE + TILE / 2, y: row * TILE + TILE / 2, taken: false, phase: level.hearts.length * 1.3 });
+}
+
 function emptyLevel(cols: number, round: number, flagCol: number): LevelData {
   return {
     cols,
@@ -57,6 +64,7 @@ function emptyLevel(cols: number, round: number, flagCol: number): LevelData {
     solid: new Uint8Array(ROWS * cols),
     spike: new Uint8Array(ROWS * cols),
     coins: [],
+    hearts: [],
     enemySpawns: [],
     spawn: { x: 2.5 * TILE, y: 13 * TILE },
     flag: { x: flagCol * TILE, y: 15 * TILE },
@@ -115,6 +123,9 @@ function buildRound1(): LevelData {
   // reward line on the high road
   for (const c of [117, 118, 119, 120]) addCoin(level, c, 6);
   level.totalCoins = level.coins.length;
+
+  // ---- heart pickups (restore one life) -------------------------------------
+  for (const [c, r] of [[41, 8], [118, 4], [138, 10]] as const) addHeart(level, c, r);
 
   // ---- enemies (walkers on the ground) --------------------------------------
   for (const c of [19, 48, 70, 84, 108, 127, 139, 157]) {
@@ -190,6 +201,9 @@ function buildRound2(): LevelData {
   // reward line on the high road
   for (const c of [105, 107, 109]) addCoin(level, c, 6);
   level.totalCoins = level.coins.length;
+
+  // ---- heart pickups: the desert is mean, take more medkits ------------------
+  for (const [c, r] of [[48, 8], [107, 4], [157, 8], [192, 7], [235, 10]] as const) addHeart(level, c, r);
 
   // ---- enemies: a proper goose army ------------------------------------------
   for (const c of [

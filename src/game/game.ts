@@ -284,6 +284,17 @@ export function startGame(canvas: HTMLCanvasElement, onMuteChange?: (muted: bool
             }
           }
 
+          for (const heart of level.hearts) {
+            if (heart.taken) continue;
+            if (Math.abs(heart.x - player.cx) < 24 && Math.abs(heart.y - player.cy) < 28) {
+              heart.taken = true;
+              if (lives < START_LIVES) lives += 1;
+              else score += 100; // full health converts the medkit into points
+              audio.sfx("coin");
+              particles.burst(heart.x, heart.y, 10, "#ff4d6d", 140, 0.5, 3, 250);
+            }
+          }
+
           particles.update(dt);
 
           const target = player.cx + player.facing * 60 - VIEW_W * 0.45;

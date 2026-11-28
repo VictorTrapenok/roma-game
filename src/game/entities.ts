@@ -97,7 +97,7 @@ export class Player implements Body {
 
     // --- hazards ---
     if (this.invuln <= 0 && touchesSpike(this, level)) {
-      emit("die", this.cx, this.cy);
+      this.hurt(emit); // spikes cost one heart, not a whole life
       return;
     }
     if (this.y > LEVEL_H + 40) {

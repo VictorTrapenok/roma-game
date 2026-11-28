@@ -214,6 +214,21 @@ function drawCoins(ctx: CanvasRenderingContext2D, level: LevelData, camX: number
   }
 }
 
+function drawHearts(ctx: CanvasRenderingContext2D, level: LevelData, camX: number, t: number): void {
+  for (const heart of level.hearts) {
+    if (heart.taken) continue;
+    const x = heart.x - camX;
+    if (x < -TILE || x > VIEW_W + TILE) continue;
+    const y = heart.y + Math.sin(t * 2.2 + heart.phase) * 3;
+    const pulse = 1 + Math.sin(t * 4 + heart.phase) * 0.12;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(pulse, pulse);
+    drawHeart(ctx, -8, -7, true);
+    ctx.restore();
+  }
+}
+
 function drawFlag(ctx: CanvasRenderingContext2D, level: LevelData, camX: number, t: number): void {
   const baseX = level.flag.x - camX;
   const baseY = level.flag.y;
@@ -389,6 +404,7 @@ export function drawWorld(
   drawTiles(ctx, level, camX);
   drawFlag(ctx, level, camX, t);
   drawCoins(ctx, level, camX, t);
+  drawHearts(ctx, level, camX, t);
   drawWalkers(ctx, walkers, camX);
   drawPlayer(ctx, player, camX, t, level.round);
   ctx.restore();
